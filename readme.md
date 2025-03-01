@@ -1,6 +1,8 @@
 
 # 🏛️ Archimedes — rollforward automatic game networking
 
+## 🚨✋ WIP: Under development
+
 - 📦 npm package `@benev/archimedes`
 - 👥 archimedes is a networking system for multiplayer web games
 - 🚚 transport agnostic, can work over webrtc, websockets, webtransport, whatever

@@ -16,7 +16,11 @@
 		"test": "cynic node x/tests.test.js",
 		"test-watch": "chokidar 'x/**/*.js' -c 'npm test'"
 	},
-	"dependencies": {},
+	"dependencies": {
+		"@benev/slate": "^0.3.0-13",
+		"@msgpack/msgpack": "^3.1.0",
+		"sparrow-rtc": "^0.2.7"
+	},
 	"devDependencies": {
 		"@benev/turtle": "^0.6.8",
 		"chokidar": "^4.0.3",
