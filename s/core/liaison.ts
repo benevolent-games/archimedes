@@ -1,79 +1,61 @@
 
+import {AuthorId} from "./types.js"
 import {Fiber} from "./utils/fiber.js"
-import {Bucket} from "./utils/bucket.js"
-import {Schema, Batch} from "./types.js"
+import {Bucket} from "../tools/bucket.js"
 import {Parcel} from "./utils/parcels/types.js"
 import {ParcelInbox} from "./utils/parcels/inbox.js"
 import {Parceller} from "./utils/parcels/parceller.js"
 import {Ping, Pingponger, Pong} from "./utils/pingponger.js"
-import {aggregateBatches} from "./utils/aggregate-batches.js"
 
-export type LiaisonMessage<xSchema extends Schema> = (
+export type Datagram<Data> = ["data", Data]
+
+export type Mail<Data> = (
 	| Ping
 	| Pong
-	| ["batch", Batch<xSchema>]
+	| ["data", Data]
 )
 
-export class Liaison<xSchema extends Schema> {
+export class Liaison<Data> {
 	pingponger: Pingponger
-	outbox = new Bucket<Batch<xSchema>>()
-	inbox = new ParcelInbox<LiaisonMessage<xSchema>>()
-	parceller = new Parceller<LiaisonMessage<xSchema>>()
+	inbox = new ParcelInbox<Mail<Data>>()
+	parceller = new Parceller<Mail<Data>>()
+	outbox = new Bucket<Parcel<Mail<Data>>>()
 
 	constructor(
-
 			/** author id of the remote partner (it's their id, not ours) */
-			public authorId: number,
-
-			public fiber: Fiber<Parcel<LiaisonMessage<xSchema>>>,
+			public authorId: AuthorId,
+			public fiber: Fiber<Parcel<Mail<Data>>[]>,
 		) {
-
 		this.pingponger = new Pingponger(p => {
 			const parcel = this.parceller.wrap(p)
-			fiber.unreliable.send(parcel)
+			fiber.unreliable.send([parcel])
 		})
 	}
 
-	queue(batch: Batch<xSchema>) {
-		this.outbox.give(batch)
+	queue(data: Data) {
+		const parcel = this.parceller.wrap(["data", data])
+		this.outbox.give(parcel)
 	}
 
-	send(batch?: Batch<xSchema>) {
-		const batches = this.outbox.take()
-		if (batch) batches.push(batch)
-		const aggregate = aggregateBatches(batches)
-		const parcel = this.parceller.wrap(["batch", aggregate])
-		this.fiber.unreliable.send(parcel)
+	send(data?: Data) {
+		const parcels = this.outbox.take()
+		if (data) parcels.push(this.parceller.wrap(["data", data]))
+		this.fiber.unreliable.send(parcels)
 	}
 
 	recv() {
-		const batches: Batch<xSchema>[] = []
-
+		const datas: Data[] = []
 		for (const message of this.inbox.take()) {
-			const [kind, x] = message
-			switch (kind) {
+			switch (message[0]) {
 				case "ping":
 				case "pong":
 					this.pingponger.receive(message)
 					break
-
-				case "batch":
-					batches.push(x)
-					break
-
 				default:
-					console.warn(`unknown message kind "${kind}"`)
+					datas.push(message[1])
 			}
 		}
-
-		const aggregate = aggregateBatches(batches)
-
-		// overwriting the authorId on incoming inputs,
-		// to prevent spoofing
-		for (const input of aggregate.inputs ?? [])
-			input.authorId = this.authorId
-
-		return aggregate
+		return datas
 	}
 }
 

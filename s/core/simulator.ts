@@ -1,9 +1,9 @@
 
-import {Schema} from "./types.js"
+import {AuthorId, Dispatch, Schema, Telegram} from "./types.js"
 
 export abstract class Simulator<xSchema extends Schema> {
 	constructor(public state: xSchema["state"]) {}
-	abstract simulate(inputs: xSchema["input"][]): void
-	abstract getDeltas(): xSchema["delta"][] | undefined
+	abstract simulate(telegrams: Telegram<xSchema>[]): xSchema["delta"]
+	abstract isRelevant(dispatch: Dispatch<xSchema>, authorId: AuthorId): boolean
 }
 
