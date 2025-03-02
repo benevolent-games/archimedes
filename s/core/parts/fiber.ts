@@ -20,12 +20,12 @@ export type FiberData<F extends Fiber<any>> = (
 )
 
 /** a virtualized cable */
-export class Fiber<M> {
+export class Fiber<M = any> {
 	reliable = new Bicomm<M>()
 	unreliable = new Bicomm<M>()
 
 	/** this fiber becomes a proxy of the cable */
-	proxyCable(cable: StdCable) {
+	entangleCable(cable: StdCable) {
 		this.reliable.send.on(m => cable.reliable.send(encode(m)))
 		this.unreliable.send.on(m => cable.unreliable.send(encode(m)))
 		return disposers(
@@ -47,7 +47,7 @@ export class Fiber<M> {
 	/** create a fiber as a proxy to the given cable */
 	static fromCable<M>(cable: StdCable) {
 		const fiber = new Fiber<M>()
-		fiber.proxyCable(cable)
+		fiber.entangleCable(cable)
 		return fiber
 	}
 

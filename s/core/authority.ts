@@ -2,15 +2,16 @@
 import {Liaison} from "./liaison.js"
 import {Simulator} from "./simulator.js"
 import {Ticker} from "../tools/ticker.js"
+import {IdCounter} from "../tools/id-counter.js"
+import {InputTelegram, Schema, StateDispatch, Telegram} from "./types.js"
 import {isInputDispatch} from "./utils/is-input-dispatch.js"
-import {AuthorId, InputTelegram, Schema, Telegram} from "./types.js"
 
 export class Authority<xSchema extends Schema> {
-	constructor(
-		public authorId: AuthorId,
-		public simulator: Simulator<xSchema>,
-		public liaisons: Set<Liaison<Telegram<xSchema>[]>>,
-	) {}
+	idCounter = new IdCounter()
+	liaisons = new Set<Liaison<Telegram<xSchema>[]>>()
+	authorId = this.idCounter.next()
+
+	constructor(public simulator: Simulator<xSchema>) {}
 
 	tick() {
 		const inputTelegrams = this.#collectInputTelegrams()
@@ -22,15 +23,18 @@ export class Authority<xSchema extends Schema> {
 		]
 
 		for (const liaison of this.liaisons) {
-			const telegrams: Telegram<xSchema>[] = []
-			for (const [authorId, dispatches] of broadcast)
-				telegrams.push([authorId, dispatches.filter(dispatch => this.simulator.isRelevant(dispatch, liaison.authorId))])
-			liaison.queue(telegrams)
+			const relevantTelegrams = this.simulator.tailor(liaison.authorId, structuredClone(broadcast))
+			liaison.queue(relevantTelegrams)
 		}
 	}
 
 	makeTicker(hz: number) {
 		return new Ticker(hz, () => this.tick())
+	}
+
+	getStateTelegram(): Telegram<xSchema> {
+		const dispatch: StateDispatch<xSchema> = ["state", this.simulator.state]
+		return [this.authorId, [dispatch]]
 	}
 
 	#collectInputTelegrams() {

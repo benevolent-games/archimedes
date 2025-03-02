@@ -11,7 +11,7 @@ export class Speculator<xSchema extends Schema> {
 
 	constructor(
 		public authorId: AuthorId,
-		public liaison: Liaison<Telegram<xSchema>>,
+		public liaison: Liaison<Telegram<xSchema>[]>,
 		public grounded: Simulator<xSchema>,
 		public forecast: Simulator<xSchema>,
 		public hz = 60,
@@ -25,7 +25,7 @@ export class Speculator<xSchema extends Schema> {
 	tick() {
 		this.#currentTick += 1
 
-		const telegrams = this.liaison.recv()
+		const telegrams = this.liaison.recv().flat()
 		this.grounded.simulate(telegrams)
 		this.forecast.state = structuredClone(this.grounded.state)
 
@@ -41,7 +41,7 @@ export class Speculator<xSchema extends Schema> {
 		const telegram: InputTelegram<xSchema["input"]> = [this.authorId, dispatches]
 
 		// immediately send down the wire
-		this.liaison.send(telegram)
+		this.liaison.send([telegram])
 
 		// schedule local inputs into the future
 		const futureTick = this.#currentTick + this.ticksAhead
