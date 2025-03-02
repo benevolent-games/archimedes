@@ -4,6 +4,12 @@ import {GameMessage, Schema} from "./types.js"
 import {Pingponger} from "./utils/pingponger.js"
 import {Inbox, Outbox, Parcel} from "./utils/inbox-outbox.js"
 
+export type Reception<xSchema extends Schema> = {
+	state: xSchema["state"]
+	deltas: xSchema["delta"][]
+	inputs: xSchema["input"][]
+}
+
 export class Liaison<xSchema extends Schema> {
 	pingponger: Pingponger
 	inbox = new Inbox<GameMessage>()
@@ -17,12 +23,40 @@ export class Liaison<xSchema extends Schema> {
 	}
 
 	sendState(state: xSchema["state"]) {}
-	takeState(): xSchema["state"][] { return [] }
+	sendDeltas(deltas: xSchema["delta"][]) {}
+	sendInputs(inputs: xSchema["input"][]) {}
 
-	sendDeltas(deltas: xSchema["delta"]) {}
-	takeDeltas(): xSchema["delta"][] { return [] }
+	receive(): Reception<xSchema> {
+		let state: xSchema["state"] | undefined
+		let inputs: xSchema["input"][] = []
+		let deltas: xSchema["delta"][] = []
 
-	sendInputs(inputs: xSchema["input"]) {}
-	takeInputs(): xSchema["input"][] { return [] }
+		for (const message of this.inbox.take()) {
+			const [kind, x] = message
+			switch (kind) {
+				case "ping":
+				case "pong":
+					this.pingponger.receive(message)
+					break
+
+				case "state":
+					state = x
+					break
+
+				case "inputs":
+					inputs.push(x)
+					break
+
+				case "deltas":
+					deltas.push(x)
+					break
+
+				default:
+					console.warn(`unknown message kind "${kind}"`)
+			}
+		}
+
+		return {state, inputs, deltas}
+	}
 }
 
