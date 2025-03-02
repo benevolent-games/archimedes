@@ -12,6 +12,7 @@ export class Bicomm<M> {
 	recv = pub<[M]>()
 }
 
+/** infer a fiber's data type */
 export type FiberData<F extends Fiber<any>> = (
 	F extends Fiber<infer M>
 		? M
@@ -61,7 +62,7 @@ export class Fiber<M> {
 		return [alice, bob] as [Fiber<M>, Fiber<M>]
 	}
 
-	/** split a main fiber into several virtual sub fibers */
+	/** roll multiple subfibers into a single megafiber */
 	static multiplex<C extends {[key: string]: Fiber<any>}>(fibers: C) {
 		const megafiber = new Fiber<{[K in keyof C]: [K, FiberData<C[K]>]}[keyof C]>()
 
