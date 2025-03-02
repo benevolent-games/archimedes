@@ -13,11 +13,17 @@ export class Authority<xSchema extends Schema> {
 	tick() {
 		const allInputs: xSchema["input"][] = []
 
-		for (const liaison of this.liaisons)
-			allInputs.push(...liaison.takeInputs())
+		for (const liaison of this.liaisons) {
+			allInputs.push(...liaison.recv().inputs ?? [])
+		}
 
 		this.simulator.simulate(allInputs)
+
 		const deltas = this.simulator.getDeltas()
+
+		for (const liaison of this.liaisons) {
+			liaison.queue
+		}
 	}
 
 	makeTicker(hz: number) {

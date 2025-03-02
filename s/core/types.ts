@@ -1,7 +1,5 @@
 
-import {Ping, Pong} from "./utils/pingponger.js"
-
-export type Input<Payload = any> = {authorId: string, payload: Payload}
+export type Input<Payload = any> = {authorId: number, payload: Payload}
 
 export type Schema = {
 	state: any
@@ -9,8 +7,9 @@ export type Schema = {
 	input: Input
 }
 
-export type StateMessage = ["state", any]
-export type DeltasMessage = ["deltas", any]
-export type InputsMessage = ["inputs", Input]
-export type GameMessage = Ping | Pong | StateMessage | DeltasMessage | InputsMessage
+export type Batch<xSchema extends Schema> = {
+	state?: xSchema["state"]
+	deltas?: xSchema["delta"][]
+	inputs?: xSchema["input"][]
+}
 

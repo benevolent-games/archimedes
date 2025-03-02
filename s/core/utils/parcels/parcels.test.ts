@@ -1,14 +1,15 @@
 
 import {Suite, expect} from "cynic"
-import {loop} from "../../tools/loop.js"
-import {Inbox, Outbox} from "./inbox-outbox.js"
+import {ParcelInbox} from "./inbox.js"
+import {Parceller} from "./parceller.js"
+import {loop} from "../../../tools/loop.js"
 
 export default <Suite>{
 
 	async "one parcel"() {
 		let now = 0
-		const outbox = new Outbox<string>(() => now)
-		const inbox = new Inbox<string>(100, 20, () => now)
+		const outbox = new Parceller<string>(() => now)
+		const inbox = new ParcelInbox<string>(100, 20, () => now)
 		const parcel = outbox.wrap("hello")
 		inbox.give(parcel)
 		now = 1000
@@ -19,8 +20,8 @@ export default <Suite>{
 
 	async "many parcels"() {
 		let now = 0
-		const outbox = new Outbox<string>(() => now)
-		const inbox = new Inbox<string>(100, 20, () => now)
+		const outbox = new Parceller<string>(() => now)
+		const inbox = new ParcelInbox<string>(100, 20, () => now)
 		const parcels = [...loop(100)].map(_ => {
 			now++
 			return outbox.wrap("a")
@@ -36,8 +37,8 @@ export default <Suite>{
 
 	async "out of order packets are corrected"() {
 		let now = 0
-		const outbox = new Outbox<string>(() => now)
-		const inbox = new Inbox<string>(100, 20, () => now)
+		const outbox = new Parceller<string>(() => now)
+		const inbox = new ParcelInbox<string>(100, 20, () => now)
 
 		const a = [...loop(10)].map(() => {
 			now += 1
@@ -73,8 +74,8 @@ export default <Suite>{
 
 	async "literally do the buffering"() {
 		let now = 0
-		const outbox = new Outbox<string>(() => now)
-		const inbox = new Inbox<string>(100, 20, () => now)
+		const outbox = new Parceller<string>(() => now)
+		const inbox = new ParcelInbox<string>(100, 20, () => now)
 
 		const parcels = [...loop(20)].map(() => {
 			now++
@@ -101,8 +102,8 @@ export default <Suite>{
 
 	async "specific abberation/jitter adjustment"() {
 		let now = 0
-		const outbox = new Outbox<string>(() => now)
-		const inbox = new Inbox<string>(100, 20, () => now)
+		const outbox = new Parceller<string>(() => now)
+		const inbox = new ParcelInbox<string>(100, 20, () => now)
 
 		now = 100 // many parcels at once, establishes an average
 		const a = [...loop(20)].map(() => outbox.wrap("a"))

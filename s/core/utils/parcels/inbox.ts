@@ -1,29 +1,10 @@
 
-import {Averager} from "../../tools/averager.js"
-
-export type ParcelId = number
-export type ParcelTime = number
-export type Parcel<P> = [ParcelId, ParcelTime, P]
-
-/** outbox parcelizes messages, preparing them for the inbox's buffering */
-export class Outbox<P> {
-	#id = 0
-	#start: number
-
-	constructor(private now = () => Date.now()) {
-		this.#start = now()
-	}
-
-	/** parcelize a payload (wrap it into a parcel) */
-	wrap(payload: P): Parcel<P> {
-		const id = this.#id++
-		const time = this.now() - this.#start
-		return [id, time, payload]
-	}
-}
+import {Nanny} from "./utils/nanny.js"
+import {Parcel, ParcelId} from "./types.js"
+import {Averager} from "../../../tools/averager.js"
 
 /** inbox delays messages with a buffer time, and actively corrects for network packet jitter */
-export class Inbox<P> {
+export class ParcelInbox<P> {
 	#start: number
 	#offsets: Averager
 	#buffer = new Map<ParcelId, Parcel<P>>
@@ -54,14 +35,25 @@ export class Inbox<P> {
 		for (const parcel of this.#buffer.values()) {
 			const [id, time] = parcel
 
+			// computing jitter corrective timings
 			const offset = this.#offset(time, localtime)
 			const abberation = offset - this.#offsets.average
 			const correctedTime = (time + offset) - abberation
 			const since = localtime - correctedTime
 
+			// surface parcels that are 'ready' after jitter corrections
 			if (since >= this.delay) {
 				ready.push(parcel)
 				this.#buffer.delete(id)
+
+				// also surface any parcels that have a smaller id
+				for (const parcelB of this.#buffer.values()) {
+					const [idB] = parcelB
+					if (idB < id) {
+						ready.push(parcelB)
+						this.#buffer.delete(idB)
+					}
+				}
 			}
 		}
 
@@ -77,17 +69,6 @@ export class Inbox<P> {
 
 	#offset(time: number, localtime = this.#localtime) {
 		return localtime - time
-	}
-}
-
-class Nanny {
-	biggest: number = -1
-
-	removeDisorderly = ([id]: Parcel<any>) => {
-		if (id <= this.biggest)
-			return false
-		this.biggest = id
-		return true
 	}
 }
 
