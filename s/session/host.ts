@@ -9,9 +9,11 @@ import {Netfibers} from "./parts/netfibers.js"
 import {Authority} from "../core/authority.js"
 import {Simulator} from "../core/simulator.js"
 import {AuthorId, InferSimulatorSchema, Telegram} from "../core/types.js"
+import {Hub} from "./parts/hub.js"
 
 export class Host<xSimulator extends Simulator<any>> {
 	static async make<xSimulator extends Simulator<any>>(options: {
+			hub: Hub
 			simulator: xSimulator,
 		}) {
 
@@ -19,31 +21,27 @@ export class Host<xSimulator extends Simulator<any>> {
 		const seats = new Map2<AuthorId, Seat>()
 		const on = new HostOn()
 
-		const sparrow = await Sparrow.host({
-			welcome: _prospect => connection => {
-				const authorId = authority.idCounter.next()
-				console.log(`client connected: ${authorId}`)
+		options.hub.onConnected(fibers => {
+			const authorId = authority.idCounter.next()
+			console.log(`client connected: ${authorId}`)
 
-				const fibers = Netfibers.forCable(connection.cable)
-				const liaison = new Liaison<Telegram<any>[]>(authorId, fibers.sub.primary)
-				authority.liaisons.add(liaison)
-				liaison.send([authority.getStateTelegram()])
+			const liaison = new Liaison<Telegram<any>[]>(authorId, fibers.sub.primary)
+			authority.liaisons.add(liaison)
+			liaison.send([authority.getStateTelegram()])
 
-				const seat = new Seat(liaison, fibers.sub.userland)
-				seats.set(authorId, seat)
-				on.seated.publish(seat)
+			const seat = new Seat(liaison, fibers.sub.userland)
+			seats.set(authorId, seat)
+			on.seated.publish(seat)
 
-				return () => {
-					authority.liaisons.delete(liaison)
-					on.unseated.publish(seat)
-					console.log(`client disconnected: ${authorId}`)
-				}
-			},
-
-			// lost connection to the sparrow signaller
-			closed: () => console.warn(`connection to sparrow signaller has died`),
+			return () => {
+				authority.liaisons.delete(liaison)
+				on.unseated.publish(seat)
+				console.log(`client disconnected: ${authorId}`)
+			}
 		})
 
+
+			// closed: () => console.warn(`connection to sparrow signaller has died`),
 		return new this(sparrow, authority, seats, on)
 	}
 

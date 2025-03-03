@@ -1,6 +1,4 @@
 
-import {Sparrow, SparrowJoin} from "sparrow-rtc"
-
 import {MetaApi} from "./types.js"
 import {Liaison} from "../core/liaison.js"
 import {endpoint} from "renraku/x/index.js"
@@ -15,22 +13,18 @@ import {InferSimulatorSchema, Telegram} from "../core/types.js"
 export class Client<xSimulator extends Simulator<any>> {
 	static async make<xSimulator extends Simulator<any>>(options: {
 			hz: number
-			invite: string
+			fibers: Netfibers
 			pastSimulator: xSimulator
 			futureSimulator: xSimulator
 		}) {
 
-		const sparrow = await Sparrow.join({
-			invite: options.invite,
-			disconnected: () => console.log(`disconnected from host`),
-		})
+		const meta = new FiberRpc<MetaApi["host"]>(
+			options.fibers.sub.meta,
+			endpoint(makeMetaClientApi()),
+		).remote as MetaApi["host"]
 
-		const fibers = Netfibers.forCable(sparrow.connection.cable)
-		const metaRpc = new FiberRpc<MetaApi["host"]>(fibers.sub.meta, endpoint(makeMetaClientApi()))
-		const metaRemote = metaRpc.remote as MetaApi["host"]
-
-		const {hostAuthorId, clientAuthorId} = await metaRemote.hello()
-		const liaison = new Liaison<Telegram<any>[]>(hostAuthorId, fibers.sub.primary)
+		const {hostAuthorId, clientAuthorId} = await meta.hello()
+		const liaison = new Liaison<Telegram<any>[]>(hostAuthorId, options.fibers.sub.primary)
 
 		const speculator = new Speculator(
 			clientAuthorId,
@@ -40,11 +34,10 @@ export class Client<xSimulator extends Simulator<any>> {
 			options.hz,
 		)
 
-		return new this(sparrow, speculator, fibers.sub.userland)
+		return new this(speculator, options.fibers.sub.userland)
 	}
 
 	constructor(
-		public sparrow: SparrowJoin,
 		public speculator: Speculator<InferSimulatorSchema<xSimulator>>,
 		public userland: Fiber,
 	) {}
