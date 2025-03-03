@@ -12,9 +12,9 @@ export class Speculator<xSchema extends Schema> {
 	constructor(
 		public authorId: AuthorId,
 		public liaison: Liaison<Telegram<xSchema>[]>,
-		public grounded: Simulator<xSchema>,
-		public forecast: Simulator<xSchema>,
-		public hz = 60,
+		public pastSimulator: Simulator<xSchema>,
+		public futureSimulator: Simulator<xSchema>,
+		public hz: number,
 	) {}
 
 	get ticksAhead() {
@@ -26,13 +26,13 @@ export class Speculator<xSchema extends Schema> {
 		this.#currentTick += 1
 
 		const telegrams = this.liaison.recv().flat()
-		this.grounded.simulate(telegrams)
-		this.forecast.state = structuredClone(this.grounded.state)
+		this.pastSimulator.simulate(telegrams)
 
 		// roll-forward
+		this.futureSimulator.state = structuredClone(this.pastSimulator.state)
 		for (const t of loop(this.ticksAhead)) {
 			const scheduledTelegrams = this.#chronicle.at(t)
-			this.forecast.simulate(scheduledTelegrams)
+			this.futureSimulator.simulate(scheduledTelegrams)
 		}
 	}
 

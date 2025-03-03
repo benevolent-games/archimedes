@@ -1,44 +1,36 @@
 
-import Sparrow from "sparrow-rtc"
-import {endpoint, Fns, JsonRpc} from "renraku"
+import {Map2} from "@benev/slate"
+import {Sparrow, SparrowHost} from "sparrow-rtc"
 
-import {CustomApi} from "./types.js"
+import {Seat} from "./utils/seat.js"
+import {HostOn} from "./utils/host-on.js"
 import {Liaison} from "../core/liaison.js"
-import {Fiber} from "../core/parts/fiber.js"
-import {FiberRpc} from "./parts/fiber-api.js"
+import {Netfibers} from "./parts/netfibers.js"
 import {Authority} from "../core/authority.js"
 import {AuthorId, Telegram} from "../core/types.js"
 
-export class Host<Api extends CustomApi> {
-	static async make<Api extends CustomApi>(
-			authority: Authority<any>,
-			customHostApi: (authorId: AuthorId) => Api["host"],
-		) {
+export class Host<xAuthority extends Authority<any>> {
+	static async make<xAuthority extends Authority<any>>(authority: xAuthority) {
+		const seats = new Map2<AuthorId, Seat>()
+		const on = new HostOn()
 
 		const sparrow = await Sparrow.host({
-
-			// accept people joining, send/receive some data
-			welcome: prospect => connection => {
+			welcome: _prospect => connection => {
 				const authorId = authority.idCounter.next()
 				console.log(`client connected: ${authorId}`)
 
-				const fibers = {
-					tele: new Fiber(),
-					custom: new Fiber(),
-					meta: new Fiber<JsonRpc.Bidirectional>(),
-				}
-				const megafiber = Fiber.multiplex(fibers)
-				megafiber.entangleCable(connection.cable)
-
-				const fiberRpc = new FiberRpc(fibers.custom, endpoint(customHostApi(authorId)))
-				const customRemote = fiberRpc.remote as Api["client"]
-
-				const liaison = new Liaison<Telegram<any>[]>(authorId, fibers.tele)
+				const fibers = Netfibers.forCable(connection.cable)
+				const liaison = new Liaison<Telegram<any>[]>(authorId, fibers.virtual.primary)
 				authority.liaisons.add(liaison)
 				liaison.send([authority.getStateTelegram()])
 
+				const seat = new Seat(liaison, fibers.virtual.userland)
+				seats.set(authorId, seat)
+				on.seated.publish(seat)
+
 				return () => {
 					authority.liaisons.delete(liaison)
+					on.unseated.publish(seat)
 					console.log(`client disconnected: ${authorId}`)
 				}
 			},
@@ -47,9 +39,14 @@ export class Host<Api extends CustomApi> {
 			closed: () => console.warn(`connection to sparrow signaller has died`),
 		})
 
-		// anybody with this invite code can join
-		sparrow.invite
-			// "215fe776f758bc44"
+		return new this(sparrow, authority, seats, on)
 	}
+
+	constructor(
+		public sparrow: SparrowHost,
+		public authority: xAuthority,
+		public seats: Map<AuthorId, Seat>,
+		public on: HostOn,
+	) {}
 }
 
