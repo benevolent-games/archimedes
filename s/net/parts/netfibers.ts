@@ -10,12 +10,12 @@ export class Netfibers {
 		return netfibers
 	}
 
-	virtual = {
+	sub = {
 		primary: new Fiber(),
 		userland: new Fiber(),
 		meta: new Fiber<JsonRpc.Bidirectional>(),
 	}
 
-	megafiber = Fiber.multiplex(this.virtual)
+	megafiber = Fiber.multiplex(this.sub)
 }
 

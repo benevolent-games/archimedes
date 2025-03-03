@@ -7,10 +7,15 @@ import {HostOn} from "./utils/host-on.js"
 import {Liaison} from "../core/liaison.js"
 import {Netfibers} from "./parts/netfibers.js"
 import {Authority} from "../core/authority.js"
-import {AuthorId, Telegram} from "../core/types.js"
+import {Simulator} from "../core/simulator.js"
+import {AuthorId, InferSimulatorSchema, Telegram} from "../core/types.js"
 
-export class Host<xAuthority extends Authority<any>> {
-	static async make<xAuthority extends Authority<any>>(authority: xAuthority) {
+export class Host<xSimulator extends Simulator<any>> {
+	static async make<xSimulator extends Simulator<any>>(options: {
+			simulator: xSimulator,
+		}) {
+
+		const authority = new Authority(options.simulator)
 		const seats = new Map2<AuthorId, Seat>()
 		const on = new HostOn()
 
@@ -20,11 +25,11 @@ export class Host<xAuthority extends Authority<any>> {
 				console.log(`client connected: ${authorId}`)
 
 				const fibers = Netfibers.forCable(connection.cable)
-				const liaison = new Liaison<Telegram<any>[]>(authorId, fibers.virtual.primary)
+				const liaison = new Liaison<Telegram<any>[]>(authorId, fibers.sub.primary)
 				authority.liaisons.add(liaison)
 				liaison.send([authority.getStateTelegram()])
 
-				const seat = new Seat(liaison, fibers.virtual.userland)
+				const seat = new Seat(liaison, fibers.sub.userland)
 				seats.set(authorId, seat)
 				on.seated.publish(seat)
 
@@ -44,7 +49,7 @@ export class Host<xAuthority extends Authority<any>> {
 
 	constructor(
 		public sparrow: SparrowHost,
-		public authority: xAuthority,
+		public authority: Authority<InferSimulatorSchema<xSimulator>>,
 		public seats: Map<AuthorId, Seat>,
 		public on: HostOn,
 	) {}

@@ -1,4 +1,6 @@
 
+import {Simulator} from "./simulator.js"
+
 export type AuthorId = number
 export type Authored<Content> = [AuthorId, Content]
 
@@ -20,4 +22,10 @@ export type Dispatch<xSchema extends Schema> = (
 
 export type Telegram<xSchema extends Schema> = Authored<Dispatch<xSchema>[]>
 export type InputTelegram<xSchema extends Schema> = Authored<InputDispatch<xSchema["input"]>[]>
+
+export type InferSimulatorSchema<S extends Simulator<any>> = (
+	S extends Simulator<infer xSchema>
+		? xSchema
+		: never
+)
 
