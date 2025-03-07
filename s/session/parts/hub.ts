@@ -1,45 +1,32 @@
 
-import Sparrow from "sparrow-rtc"
 import {Spoke} from "./spoke.js"
-import {Netfibers} from "./netfibers.js"
-
 export type SpokeListener = (spoke: Spoke) => () => void
 
 export class Hub {
-	static async sparrowHost(options: {
-			closed: () => void
-			connected: (netfibers: Netfibers) => () => void
-		}) {
+	#listeners = new Set<SpokeListener>()
 
-		const hub = new this()
+	/** an incoming spoke has appeared, dispatch all onSpoke listeners */
+	invoke(spoke: Spoke) {
+		const disconnectedFns: (() => void)[] = []
+		for (const fn of this.#listeners) {
 
-		const sparrow = await Sparrow.host({
-			closed: options.closed,
-			welcome: _prospect => connection => {
-				const fibers = Netfibers.forCable(connection.cable)
-				const disconnect = () => connection.disconnect()
-				const spoke = new Spoke(fibers, disconnect)
-				const disconnected = hub.#invoke(spoke)
-				return disconnected
-			},
-		})
+			// call every spoke listener
+			const spokeDisconnected = fn(spoke)
 
-		return {sparrow, hub}
-	}
-
-	#fns = new Set<SpokeListener>()
-
-	#invoke(spoke: Spoke) {
-		const disconnects: (() => void)[] = []
-		for (const fn of this.#fns) {
-			disconnects.push(fn(spoke))
+			// accumulate each listener's disconnected callback
+			disconnectedFns.push(spokeDisconnected)
 		}
-		return () => disconnects.forEach(d => d())
+
+		// when this spoke is disconnected, call every listener's disconnected callback
+		return () => disconnectedFns.forEach(d => d())
 	}
 
+	/** add a spoke listener to respond to incoming spokes */
 	onSpoke(fn: SpokeListener) {
-		this.#fns.add(fn)
-		return () => void this.#fns.delete(fn)
+		this.#listeners.add(fn)
+
+		// callback to remove this listener
+		return () => void this.#listeners.delete(fn)
 	}
 }
 

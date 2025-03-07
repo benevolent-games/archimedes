@@ -9,7 +9,7 @@ import {Authority} from "../core/authority.js"
 import {Simulator} from "../core/simulator.js"
 import {AuthorId, Telegram} from "../core/types.js"
 
-export class Host<xSimulator extends Simulator<any>> {
+export class SessionHost<xSimulator extends Simulator<any>> {
 	seats = new Map2<AuthorId, Seat>()
 	on = new HostOn()
 

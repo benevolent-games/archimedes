@@ -10,7 +10,7 @@ import {Speculator} from "../core/speculator.js"
 import {makeMetaClientApi} from "./meta/meta-client.js"
 import {InferSimulatorSchema, Telegram} from "../core/types.js"
 
-export class Client<xSimulator extends Simulator<any>> {
+export class SessionClient<xSimulator extends Simulator<any>> {
 	static async make<xSimulator extends Simulator<any>>(options: {
 			hz: number
 			spoke: Spoke
