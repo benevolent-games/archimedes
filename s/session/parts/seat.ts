@@ -1,5 +1,7 @@
 
 import {Spoke} from "./spoke.js"
+import {endpoint, Fns} from "renraku"
+import {FiberRpc} from "./fiber-rpc.js"
 import {Liaison} from "../../core/liaison.js"
 
 export class Seat {
@@ -23,6 +25,10 @@ export class Seat {
 
 	disconnect() {
 		this.spoke.disconnect()
+	}
+
+	userlandApi<RemoteFns extends Fns>(seat: Seat, hostFns: RemoteFns) {
+		return new FiberRpc<RemoteFns>(seat.userland, endpoint(hostFns)).remote
 	}
 }
 
