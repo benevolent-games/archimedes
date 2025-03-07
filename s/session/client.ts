@@ -1,13 +1,13 @@
 
-import {MetaApi} from "./types.js"
+import {Seat} from "./parts/seat.js"
 import {Spoke} from "./parts/spoke.js"
 import {Liaison} from "../core/liaison.js"
 import {endpoint} from "renraku/x/index.js"
-import {Fiber} from "../core/parts/fiber.js"
+import {MetaApi} from "./apis/meta/types.js"
 import {FiberRpc} from "./parts/fiber-rpc.js"
 import {Simulator} from "../core/simulator.js"
 import {Speculator} from "../core/speculator.js"
-import {makeMetaClientApi} from "./meta/meta-client.js"
+import {makeMetaClientApi} from "./apis/meta/meta-client.js"
 import {InferSimulatorSchema, Telegram} from "../core/types.js"
 
 export class Client<xSimulator extends Simulator<any>> {
@@ -25,6 +25,7 @@ export class Client<xSimulator extends Simulator<any>> {
 
 		const {hostAuthorId, clientAuthorId} = await meta.hello()
 		const liaison = new Liaison<Telegram<any>[]>(hostAuthorId, options.spoke.fibers.sub.primary)
+		const seat = new Seat(options.spoke, liaison)
 
 		const speculator = new Speculator(
 			clientAuthorId,
@@ -34,12 +35,16 @@ export class Client<xSimulator extends Simulator<any>> {
 			options.hz,
 		)
 
-		return new this(speculator, options.spoke.fibers.sub.userland)
+		return new this(seat, speculator)
 	}
 
 	constructor(
+		public seat: Seat,
 		public speculator: Speculator<InferSimulatorSchema<xSimulator>>,
-		public userland: Fiber,
 	) {}
+
+	disconnect() {
+		this.seat.disconnect()
+	}
 }
 

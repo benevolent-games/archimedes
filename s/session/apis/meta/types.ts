@@ -1,7 +1,7 @@
 
 import {Fns} from "renraku"
-import type {makeMetaHostApi} from "./meta/meta-host.js"
-import type {makeMetaClientApi} from "./meta/meta-client.js"
+import type {makeMetaHostApi} from "./meta-host.js"
+import type {makeMetaClientApi} from "./meta-client.js"
 
 export type CustomApi = {
 	host: Fns

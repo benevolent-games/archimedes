@@ -39,7 +39,7 @@ export class Hub {
 
 	onSpoke(fn: SpokeListener) {
 		this.#fns.add(fn)
-		return () => this.#fns.delete(fn)
+		return () => void this.#fns.delete(fn)
 	}
 }
 

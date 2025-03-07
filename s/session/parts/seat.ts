@@ -1,20 +1,28 @@
 
-import {AuthorId} from "../../core/types.js"
+import {Spoke} from "./spoke.js"
 import {Liaison} from "../../core/liaison.js"
-import {Fiber} from "../../core/parts/fiber.js"
 
 export class Seat {
-	readonly authorId: AuthorId
-
 	constructor(
+			private spoke: Spoke,
 			private liaison: Liaison<any>,
-			public userland: Fiber,
 		) {
-		this.authorId = liaison.authorId
+	}
+
+	get authorId() {
+		return this.liaison.authorId
 	}
 
 	get rtt() {
 		return this.liaison.pingponger.averageRtt
+	}
+
+	get userland() {
+		return this.spoke.fibers.sub.userland
+	}
+
+	disconnect() {
+		this.spoke.disconnect()
 	}
 }
 

@@ -3,8 +3,8 @@ import {Liaison} from "./liaison.js"
 import {Simulator} from "./simulator.js"
 import {Ticker} from "../tools/ticker.js"
 import {IdCounter} from "../tools/id-counter.js"
-import {InputTelegram, Schema, StateDispatch, Telegram} from "./types.js"
 import {isInputDispatch} from "./utils/is-input-dispatch.js"
+import {InputTelegram, Schema, StateDispatch, Telegram} from "./types.js"
 
 export class Authority<xSchema extends Schema> {
 	idCounter = new IdCounter()

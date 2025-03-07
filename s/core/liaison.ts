@@ -24,6 +24,7 @@ export class Liaison<Data> {
 	constructor(
 			/** author id of the remote partner (it's their id, not ours) */
 			public authorId: AuthorId,
+
 			public fiber: Fiber<Parcel<Mail<Data>>[]>,
 		) {
 		this.pingponger = new Pingponger(p => {
