@@ -18,7 +18,7 @@ export type MyComponents = {
 const eureka = setupEureka<MyContext, MyComponents>()
 
 const physicsSystem = eureka.system("physics")
-	.select(["physical", "spatial"])
+	.select("physical", "spatial")
 	.fn((entities, assembly) => {
 
 		assembly.context // user-defined context
@@ -29,4 +29,21 @@ const physicsSystem = eureka.system("physics")
 			entity.spatial // the spatial component
 		}
 	})
+
+const assembly = eureka.assembly(
+	new MyContext(), // every system gets access to our context
+	[physicsSystem], // here's an array of all the systems
+)
+
+// creating some entities
+assembly.create({health: 100})
+assembly.create({
+	physical: {mass: 5},
+	spatial: {
+		position: [1, 2, 3],
+		rotation: [0, 0, 0, 1],
+	},
+})
+
+assembly.execute() // execute all systems
 
