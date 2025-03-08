@@ -25,9 +25,12 @@ Archimedes isn't finished yet, it's under active development.
 
 <br/>
 
-# 🏺 Eureka
+# 🤯 Eureka
 
-## A very lean and simple ECS system
+> [***"Eureka! I have found it!"***](https://en.wikipedia.org/wiki/Eureka_%28word%29)  
+> &nbsp; &nbsp; — *Archimedes, before 212 BC*  
 
-*Eureka* comes with Archimedes, and has a ready-made integration with Archimedes. Eureka can also be used standalone.
+## An elegant ECS framework
+
+*Eureka* was designed for Archimedes, but can be used standalone.
 
