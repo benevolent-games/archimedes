@@ -4,10 +4,10 @@ import {Components} from "../parts/types.js"
 import {EuclideanContext} from "./context.js"
 import {Assembly} from "../parts/assembly.js"
 import {Simulator} from "../../core/simulator.js"
-import {AuthorId, Telegram} from "../../core/types.js"
+import {AuthorId, Dispatch, Telegram} from "../../core/types.js"
 
 export class EuclideanSimulator
-	<xContext extends EuclideanContext, C extends Components>
+	<C extends Components, xContext extends EuclideanContext>
 	extends Simulator<EuclideanSchema<C>> {
 
 	#deltas: EuclideanSchema<C>["delta"] = []
@@ -56,8 +56,31 @@ export class EuclideanSimulator
 		return this.#deltas
 	}
 
-	tailor(authorId: AuthorId, telegrams: Telegram<EuclideanSchema<C>>[]): Telegram<EuclideanSchema<C>>[] {
-		return []
+	tailor(audienceAuthorId: AuthorId, telegrams: Telegram<EuclideanSchema<C>>[]): Telegram<EuclideanSchema<C>>[] {
+		const relevantEntities = this.assembly.context.relevance.author(audienceAuthorId)
+		return telegrams.map(([telegramAuthorId, dispatches]) => {
+			const relevantDispatches: Dispatch<EuclideanSchema<C>>[] = []
+			for (const [kind, x] of dispatches) {
+				switch (kind) {
+
+					case "state":
+						relevantDispatches.push([kind, x.filter(([id]) => relevantEntities.has(id))])
+						break
+
+					case "delta":
+						relevantDispatches.push([kind, x.filter(([deltaKind, y]) => {
+							if (deltaKind === "update") return relevantEntities.has(y[0])
+							else return relevantEntities.has(y)
+						})])
+						break
+
+					case "input":
+						relevantDispatches.push([kind, x.filter(([id]) => relevantEntities.has(id))])
+						break
+				}
+			}
+			return [telegramAuthorId, dispatches]
+		})
 	}
 }
 

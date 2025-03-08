@@ -20,7 +20,10 @@ const euclid = setupEuclid<MyContext, MyComponents>()
 const physicsSystem = euclid.system("physics")
 	.select(["physical", "spatial"])
 	.fn((entities, assembly) => {
+
 		assembly.context // user-defined context
+		assembly.create({health: 100}) // can create entities and stuff
+
 		for (const [id, entity] of entities) {
 			entity.physical // the physical component
 			entity.spatial // the spatial component
