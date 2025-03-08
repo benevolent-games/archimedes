@@ -7,7 +7,7 @@ export type DeltaUpdate<C extends Components = any> = ["update", AnyEntityEntry<
 export type DeltaDelete = ["delete", EntityId]
 export type Delta<C extends Components> = DeltaUpdate<C> | DeltaDelete
 
-export type EuclideanSchema<C extends Components> = {
+export type EurekaSchema<C extends Components> = {
 	state: AnyEntityEntry<C>[]
 	delta: Delta<C>[]
 	input: InputEntry[]

@@ -3,7 +3,7 @@
 
 # 🏛️ Archimedes
 
-> ***"Do not disturb my circles!"***  
+> [***"Do not disturb my circles!"***](https://en.wikipedia.org/wiki/Noli_turbare_circulos_meos!)  
 > &nbsp; &nbsp; — *Archimedes, c. 212 BC*  
 
 ## Tournament-grade rollforward netcode for web games
@@ -22,4 +22,12 @@ Users *will* accidentally close their browser tab mid-game. Archimedes helps the
 
 📦 **Npm package `@benev/archimedes`:**  
 Archimedes isn't finished yet, it's under active development.
+
+<br/>
+
+# 🏺 Eureka
+
+## A very lean and simple ECS system
+
+*Eureka* comes with Archimedes, and has a ready-made integration with Archimedes. Eureka can also be used standalone.
 

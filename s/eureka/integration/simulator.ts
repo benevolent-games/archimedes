@@ -1,21 +1,21 @@
 
-import {EuclideanSchema} from "./types.js"
+import {EurekaSchema} from "./types.js"
+import {EurekaContext} from "./context.js"
 import {Components} from "../parts/types.js"
-import {EuclideanContext} from "./context.js"
 import {Assembly} from "../parts/assembly.js"
 import {Simulator} from "../../core/simulator.js"
 import {AuthorId, Dispatch, Telegram} from "../../core/types.js"
 
-export class EuclideanSimulator
-	<C extends Components, xContext extends EuclideanContext>
-	extends Simulator<EuclideanSchema<C>> {
+export class EurekaSimulator
+	<C extends Components, xContext extends EurekaContext>
+	extends Simulator<EurekaSchema<C>> {
 
-	#deltas: EuclideanSchema<C>["delta"] = []
+	#deltas: EurekaSchema<C>["delta"] = []
 
 	constructor(
 			public authorityId: AuthorId,
 			public assembly: Assembly<xContext, C>,
-			state: EuclideanSchema<C>["state"],
+			state: EurekaSchema<C>["state"],
 		) {
 		super(state)
 		assembly.created(entry => void this.#deltas.push(["update", entry]))
@@ -23,7 +23,7 @@ export class EuclideanSimulator
 		assembly.deleted(id => void this.#deltas.push(["delete", id]))
 	}
 
-	simulate(telegrams: Telegram<EuclideanSchema<C>>[]): EuclideanSchema<C>["delta"] {
+	simulate(telegrams: Telegram<EurekaSchema<C>>[]): EurekaSchema<C>["delta"] {
 		this.#deltas = []
 
 		Simulator.handleTelegrams(telegrams, {
@@ -56,10 +56,10 @@ export class EuclideanSimulator
 		return this.#deltas
 	}
 
-	tailor(audienceAuthorId: AuthorId, telegrams: Telegram<EuclideanSchema<C>>[]): Telegram<EuclideanSchema<C>>[] {
+	tailor(audienceAuthorId: AuthorId, telegrams: Telegram<EurekaSchema<C>>[]): Telegram<EurekaSchema<C>>[] {
 		const relevantEntities = this.assembly.context.relevance.author(audienceAuthorId)
 		return telegrams.map(([telegramAuthorId, dispatches]) => {
-			const relevantDispatches: Dispatch<EuclideanSchema<C>>[] = []
+			const relevantDispatches: Dispatch<EurekaSchema<C>>[] = []
 			for (const [kind, x] of dispatches) {
 				switch (kind) {
 

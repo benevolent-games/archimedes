@@ -1,5 +1,5 @@
 
-import {setupEuclid} from "./euclid.js"
+import {setupEureka} from "./eureka.js"
 
 export class MyContext {
 	lol = "rofl"
@@ -15,9 +15,9 @@ export type MyComponents = {
 	}
 }
 
-const euclid = setupEuclid<MyContext, MyComponents>()
+const eureka = setupEureka<MyContext, MyComponents>()
 
-const physicsSystem = euclid.system("physics")
+const physicsSystem = eureka.system("physics")
 	.select(["physical", "spatial"])
 	.fn((entities, assembly) => {
 
