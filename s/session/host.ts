@@ -7,9 +7,10 @@ import {HostOn} from "./parts/host-on.js"
 import {Liaison} from "../core/liaison.js"
 import {Authority} from "../core/authority.js"
 import {Simulator} from "../core/simulator.js"
-import {AuthorId, Telegram} from "../core/types.js"
+import {AuthorId, InferSimulatorSchema, Telegram} from "../core/types.js"
 
 export class SessionHost<xSimulator extends Simulator<any>> {
+	authority: Authority<InferSimulatorSchema<xSimulator>>
 	seats = new Map2<AuthorId, Seat>()
 	on = new HostOn()
 
@@ -21,6 +22,7 @@ export class SessionHost<xSimulator extends Simulator<any>> {
 		}) {
 
 		const authority = new Authority(options.simulator)
+		this.authority = authority
 
 		this.#cleanup = options.hub.onSpoke(spoke => {
 			const authorId = authority.idCounter.next()

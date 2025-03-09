@@ -51,6 +51,17 @@ export class Fiber<M = any> {
 		return fiber
 	}
 
+	/** weld two fibers together: messages sent to one are received by the other */
+	static entangle<M>(alice: Fiber<M>, bob: Fiber<M>) {
+		const detanglers = [
+			alice.reliable.send.on(m => bob.reliable.recv(m)),
+			alice.unreliable.send.on(m => bob.unreliable.recv(m)),
+			bob.reliable.send.on(m => alice.reliable.recv(m)),
+			bob.unreliable.send.on(m => alice.unreliable.recv(m)),
+		]
+		return () => detanglers.forEach(f => f())
+	}
+
 	/** create two fibers that are welded together: sending to one is recieved by the other */
 	static entangledPair<M>() {
 		const alice = new Fiber<M>()

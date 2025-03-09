@@ -7,13 +7,13 @@ import {Simulator} from "../../core/simulator.js"
 import {AuthorId, Dispatch, Telegram} from "../../core/types.js"
 
 export class EurekaSimulator
-	<C extends Components, xContext extends EurekaContext>
+	<xContext extends EurekaContext, C extends Components>
 	extends Simulator<EurekaSchema<C>> {
 
 	#deltas: EurekaSchema<C>["delta"] = []
+	#authorityId = 0
 
 	constructor(
-			public authorityId: AuthorId,
 			public assembly: Assembly<xContext, C>,
 			state: EurekaSchema<C>["state"],
 		) {
@@ -32,12 +32,12 @@ export class EurekaSimulator
 			},
 
 			state: (state, authorId) => {
-				if (authorId === this.authorityId)
+				if (authorId === this.#authorityId)
 					this.assembly.overwrite(state)
 			},
 
 			delta: (deltas, authorId) => {
-				if (authorId === this.authorityId)
+				if (authorId === this.#authorityId)
 					return undefined
 				for (const [kind, payload] of deltas) {
 					if (kind === "update") {
