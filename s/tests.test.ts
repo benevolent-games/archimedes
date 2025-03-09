@@ -1,10 +1,14 @@
 
+import "@benev/slate/x/node.js"
+
 import {Suite} from "cynic"
-import eurekaTest from "./eureka/testing/eureka.test.js"
-import parcelsTest from "./core/parts/parcels/parcels.test.js"
+import eureka from "./eureka/testing/eureka.test.js"
+import parcels from "./core/parts/parcels/parcels.test.js"
 
 export default <Suite>{
-	parcelsTest,
-	eurekaTest,
+	eureka,
+	archimedes: {
+		parcels,
+	},
 }
 

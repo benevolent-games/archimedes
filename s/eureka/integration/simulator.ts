@@ -18,9 +18,9 @@ export class EurekaSimulator
 			state: EurekaSchema<C>["state"],
 		) {
 		super(state)
-		assembly.created(entry => void this.#deltas.push(["update", entry]))
-		assembly.updated(entry => void this.#deltas.push(["update", entry]))
-		assembly.deleted(id => void this.#deltas.push(["delete", id]))
+		assembly.on.created(entity => void this.#deltas.push(["update", [entity.id, entity.components]]))
+		assembly.on.updated(entity => void this.#deltas.push(["update", [entity.id, entity.components]]))
+		assembly.on.deleted(id => void this.#deltas.push(["delete", id]))
 	}
 
 	simulate(telegrams: Telegram<EurekaSchema<C>>[]): EurekaSchema<C>["delta"] {
@@ -33,7 +33,7 @@ export class EurekaSimulator
 
 			state: (state, authorId) => {
 				if (authorId === this.authorityId)
-					this.assembly.overwriteAll(state)
+					this.assembly.overwrite(state)
 			},
 
 			delta: (deltas, authorId) => {
@@ -42,7 +42,7 @@ export class EurekaSimulator
 				for (const [kind, payload] of deltas) {
 					if (kind === "update") {
 						const [id, entity] = payload
-						this.assembly.update(id, entity)
+						this.assembly.write(id, entity)
 					}
 					else {
 						const id = payload

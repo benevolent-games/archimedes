@@ -1,61 +1,70 @@
 
 import {Map2, pubsub} from "@benev/slate"
 import {System} from "./system.js"
+import {Entity} from "./entity.js"
 import {IdCounter} from "../../tools/id-counter.js"
-import {Components, EntityId, AnyEntity, AnyEntityEntry} from "./types.js"
+import {Components, EntityId, PartialEntityEntry} from "./types.js"
 
 export class Assembly<Context, C extends Components> {
-	created = pubsub<[AnyEntityEntry<C>]>()
-	updated = pubsub<[AnyEntityEntry<C>]>()
-	deleted = pubsub<[EntityId]>()
+	#entities = new Map2<number, Entity<Partial<C>>>()
+	counter = new IdCounter()
 
-	#counter = new IdCounter()
-	#entities = new Map2<number, AnyEntity<C>>()
+	on = {
+		created: pubsub<[Entity<Partial<C>>]>(),
+		updated: pubsub<[Entity<Partial<C>>]>(),
+		deleted: pubsub<[EntityId]>(),
+	}
 
 	constructor(public context: Context, private systems: System[]) {}
 
-	overwriteAll(entries: AnyEntityEntry<C>[]) {
-		this.#entities.clear()
-		for (const [id, entity] of entries)
-			this.#entities.set(id, entity)
+	get<C2 extends Partial<C2>>(id: number) {
+		return this.#entities.get(id) as Entity<C2> | undefined
 	}
 
-	execute() {
-		for (const system of this.systems)
-			system.execute(this)
+	require<C2 extends Partial<C2>>(id: number) {
+		return this.#entities.require(id) as unknown as C2
 	}
 
-	get<E extends Partial<E>>(id: number) {
-		return this.#entities.get(id) as E | undefined
-	}
-
-	require<E extends Partial<E>>(id: number) {
-		return this.#entities.require(id) as unknown as E
-	}
-
-	create<E extends Partial<C>>(entity: E) {
-		const id = this.#counter.next()
-		this.#entities.set(id, entity)
+	/** create or update an entity */
+	write<C2 extends Partial<C>>(id: number, components: C2) {
+		const entity = this.#entities.guarantee(id, () => new Entity(id, components)) as Entity<C2>
+		entity.components = components
 		for (const system of this.systems)
 			system.cacheUpdate(id, entity)
-		const entry = [id, entity] as [EntityId, E]
-		this.created.publish(entry)
-		return id
+		this.on.created.publish(entity)
+		return entity
 	}
 
-	update<E extends Partial<C>>(id: EntityId, entity: E) {
-		this.#entities.set(id, entity)
-		for (const system of this.systems)
-			system.cacheUpdate(id, entity)
-		this.updated.publish([id, entity])
-		return id
+	/** create a new entity */
+	create<C2 extends Partial<C>>(components: C2) {
+		const id = this.counter.next()
+		return this.write(id, components)
 	}
 
+	/** delete an entity, dispatching relevant pubsubs */
 	delete(id: number) {
 		this.#entities.delete(id)
 		for (const system of this.systems)
 			system.cacheDelete(id)
-		this.deleted.publish(id)
+		this.on.deleted.publish(id)
+	}
+
+	/** forget everything and start from a new state */
+	overwrite(entries: PartialEntityEntry<C>[]) {
+		const data = new Map2(entries)
+
+		for (const [id, components] of data)
+			this.write(id, components)
+
+		for (const {id} of this.#entities.values())
+			if (!data.has(id))
+				this.delete(id)
+	}
+
+	/** execute all systems */
+	execute() {
+		for (const system of this.systems)
+			system.execute(this)
 	}
 }
 

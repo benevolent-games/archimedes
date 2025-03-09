@@ -1,35 +1,37 @@
 
 import {Map2} from "@benev/slate"
+import {Entity} from "./entity.js"
 import {Assembly} from "./assembly.js"
-import {SystemFn, AnyEntity} from "./types.js"
+import {SystemFn, UnknownComponents} from "./types.js"
 
 export class System {
-	#cache = new Map2<number, AnyEntity<any>>()
-	#cacheEntries: [number, AnyEntity<any>][] = []
+	#cacheMap = new Map2<number, Entity>()
+	#cacheArray: Entity[] = []
 
 	constructor(
 		public label: string,
 		public keys: any[],
-		public fn: SystemFn<any, any, any>,
+		public keysOptional: any[],
+		public fn: SystemFn<any, any, any, any>,
 	) {}
 
 	execute(assembly: Assembly<any, any>) {
-		this.fn(this.#cacheEntries, assembly)
+		this.fn(this.#cacheArray, assembly)
 	}
 
-	cacheUpdate(id: number, entity: AnyEntity<any>) {
-		if (this.#matching(entity)) this.#cache.set(id, entity)
-		else this.#cache.delete(id)
-		this.#cacheEntries = [...this.#cache]
+	cacheUpdate(id: number, entity: Entity) {
+		if (this.#matching(entity)) this.#cacheMap.set(id, entity)
+		else this.#cacheMap.delete(id)
+		this.#cacheArray = [...this.#cacheMap.values()]
 	}
 
 	cacheDelete(id: number) {
-		this.#cache.delete(id)
-		this.#cacheEntries = [...this.#cache]
+		this.#cacheMap.delete(id)
+		this.#cacheArray = [...this.#cacheMap.values()]
 	}
 
-	#matching(entity: AnyEntity<any>) {
-		return this.keys.every(requiredKey => requiredKey in entity)
+	#matching(entity: UnknownComponents) {
+		return this.keys.every(requiredKey => requiredKey in entity.components)
 	}
 }
 
